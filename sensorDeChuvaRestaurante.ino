@@ -1,18 +1,27 @@
 /**************Restaurante Sutaki - Controle de Tenda Automatizado*******************/
 
 // Pinos de controle do motor
-const int IN1 = 6;  
-const int IN2 = 5;  
+ int IN1 = 6;  
+ int IN2 = 5;  
 
 // Sensor de chuva analógico
-const int sensorChuva = A1;
+ int sensorChuva = A1;
 
-// Limite para detectar chuva (valores abaixo indicam presença de chuva)
-const int valorChuva = 512;
+// Sensor de luminosidade - LDR
+ int sensorLuz = A3;
 
+//Limite para luz (valores abaixo de 400 indicam luz)
+ int valorLuz = 400;
+
+// Limite para detectar chuva (valores abaixo de 512 indicam presença de chuva)
+ int valorChuva = 512;
 
 // Estado atual da tenda: true = fechada, false = aberta
 bool tendaFechada = false;
+
+// Armazena os valores lidos de Chuva e Luz
+int leituraChuva = 0;
+int leituraLuz = 0;
 
 void setup() {
 
@@ -25,30 +34,42 @@ void setup() {
 
   // Motor parado no início
   pararMotor();
+
+  //
+  leituraLuz = analogRead(sensorLuz);
+  leituraChuva = analogRead(sensorChuva);
+
+  // Verifica o estado inicial da tenda com base na iluminação
+  if (leituraLuz < valorLuz) {
+    tendaFechada = false;  
+    Serial.println("Muita luz - Tenda ABERTA");
+  } else {
+    tendaFechada = true;
+    Serial.println("Pouca Luz- Tenda FECHADA");
+  }
+
+
 }
 
 void loop() {
-  int leitura = analogRead(sensorChuva);
-  
-  Serial.print("Valor do sensor: ");
-  Serial.println(leitura);
-
+  //verificação se está chovendo
+  leituraChuva = analogRead(sensorChuva); 
 
   // Detecta chuva: fecha a tenda se estiver aberta
-  if (leitura < valorChuva && !tendaFechada) {
+  if (leituraChuva < valorChuva && !tendaFechada) {
     Serial.println("Chuva detectada - Fechando tenda");
     fecharTenda();
     tendaFechada = true;
   }
 
   // Sem chuva: abre a tenda se estiver fechada
-  if (leitura >= valorChuva && tendaFechada) {
+  if (leituraChuva >= valorChuva && tendaFechada) {
     Serial.println("Sem chuva - Abrindo tenda");
     abrirTenda();
     tendaFechada = false;
   }
 
-  delay(500); // Aguarda meio segundo antes da próxima leitura
+  delay(1000); // Aguarda 1 segundo antes da próxima leitura
 }
 
 // Abre a tenda (motor gira no sentido anti-horário)
@@ -57,7 +78,7 @@ void abrirTenda() {
   analogWrite(IN2, 0);
   delay(2800);
   pararMotor();
-  delay(2000);
+  delay(3000);
 }
 
 // Fecha a tenda (motor gira no sentido horário)
@@ -66,7 +87,7 @@ void fecharTenda() {
   analogWrite(IN2, 80);
   delay(2800); 
   pararMotor();
-  delay(2000);
+  delay(3000);
 }
 
 // Para o motor
